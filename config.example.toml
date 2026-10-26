@@ -1,0 +1,33 @@
+# DecisionNS
+#
+# Listen addresses are read at startup. Upstream servers below only seed a
+# new database; after the first run, change them in the admin UI.
+
+data_dir = "data"
+
+[dns]
+# Port 53 is what a home router expects. Binding it needs root, or
+# `sudo setcap cap_net_bind_service=+ep` on the binary.
+listen = ["0.0.0.0:53", "[::]:53"]
+tcp = true
+# Refuse queries from public addresses so this host cannot be used as an
+# open resolver. LAN, loopback, link-local, and Tailscale (100.64/10) are
+# allowed. Set true only if clients really do query from public IPs.
+allow_public = false
+
+[admin]
+listen = "0.0.0.0:8080"
+username = "admin"
+# password = "change-me"   # seeds the first account only
+# Or set DECISIONNS_ADMIN_PASSWORD. A random password is printed once if
+# neither is set.
+allow_public = false
+
+[upstream]
+timeout_ms = 1500
+servers = [
+  "https://cloudflare-dns.com/dns-query",
+  "https://dns.google/dns-query",
+  "1.1.1.1:53",
+  "8.8.8.8:53",
+]

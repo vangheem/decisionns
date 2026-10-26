@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DecisionNS</title>
+<style>
+  :root {
+    --bg: #12140f;
+    --bg-2: #1b1e16;
+    --line: #31362a;
+    --text: #efe8d6;
+    --muted: #a39b86;
+    --brass: #e0a84a;
+    --brass-dim: #8a6a2e;
+    --sage: #9bb57a;
+    --coral: #e07a64;
+    --ink: #0d0e0b;
+    --shadow: 0 18px 40px rgba(0,0,0,.28);
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+  body { background-image: radial-gradient(1200px 500px at 10% -10%, #2a2618 0%, transparent 55%); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  a { color: var(--brass); }
+  h1, h2, h3 { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-weight: 500; letter-spacing: -0.02em; }
+  .hidden { display: none !important; }
+
+  #login {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+  .login-card { width: min(420px, 100%); padding: 32px; }
+  .mark {
+    width: 36px; height: 36px; border: 1.5px solid var(--brass);
+    border-radius: 8px; display: grid; place-items: center; margin-bottom: 18px;
+  }
+  .mark span { width: 14px; height: 2px; background: var(--brass); position: relative; }
+  .mark span:before, .mark span:after {
+    content: ""; position: absolute; width: 2px; height: 8px; background: var(--brass); left: 0;
+  }
+  .mark span:before { top: -8px; }
+  .mark span:after { top: 2px; left: 12px; }
+  .login-card h1 { margin: 0 0 6px; font-size: 34px; }
+  .sub { color: var(--muted); margin: 0 0 22px; line-height: 1.45; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input, select, textarea {
+    width: 100%; background: #12140f; border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; outline: none;
+  }
+  textarea { min-height: 140px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--brass-dim); }
+  .btn {
+    border: 0; border-radius: 999px; padding: 10px 16px; background: var(--brass); color: var(--ink); font-weight: 650;
+  }
+  .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn.danger { background: transparent; color: var(--coral); border: 1px solid #6a3a32; }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .error { color: var(--coral); min-height: 1.2em; margin: 10px 0 0; font-size: 14px; }
+
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  aside {
+    border-right: 1px solid var(--line); padding: 22px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column; gap: 6px; background: rgba(18,20,15,.9);
+  }
+  .brand { display: flex; gap: 10px; align-items: center; margin: 0 8px 18px; }
+  .brand strong { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 22px; font-weight: 500; }
+  nav button {
+    text-align: left; background: transparent; border: 0; color: var(--muted); border-radius: 10px; padding: 9px 10px;
+  }
+  nav button.active, nav button:hover { background: #262a20; color: var(--text); }
+  .spacer { flex: 1; }
+  main { padding: 28px 32px 60px; max-width: 1100px; }
+  .page-head { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 18px; }
+  .page-head h2 { margin: 0; font-size: 32px; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); }
+  .grid { display: grid; gap: 12px; }
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 16px 18px; }
+  .stat b { display: block; font-size: 28px; font-family: "Iowan Old Style", Palatino, Georgia, serif; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .panel { padding: 16px 18px; }
+  .panel h3 { margin: 0 0 12px; font-size: 20px; }
+  .bars { display: flex; align-items: end; gap: 3px; height: 92px; }
+  .bars i { display: block; flex: 1; background: #3d4632; border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+  .bars i em { position: absolute; left: 0; right: 0; bottom: 0; background: var(--coral); border-radius: 3px 3px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 550; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; border: 1px solid var(--line); }
+  .pill.block, .pill.child { color: var(--coral); border-color: #6a3a32; }
+  .pill.allow, .pill.unrestricted { color: var(--sage); border-color: #3e5234; }
+  .pill.standard { color: var(--brass); border-color: var(--brass-dim); }
+  .warn { background: #2a2216; border: 1px solid #6a5428; color: #f0d7a2; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .split { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+  .muted { color: var(--muted); }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+  .check input { width: auto; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); }
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    aside { position: sticky; height: auto; flex-direction: row; overflow: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    aside .brand, aside .spacer, aside .logout { display: none; }
+    nav { display: flex; }
+    .stats, .split { grid-template-columns: 1fr; }
+    main { padding: 18px 14px 40px; }
+  }
+</style>
+</head>
+<body>
+<div id="login">
+  <form class="card login-card" id="login-form">
+    <div class="mark"><span></span></div>
+    <h1>DecisionNS</h1>
+    <p class="sub">The house DNS gate. Lookups are allowed only after lists and decision rules say so.</p>
+    <label>Username</label>
+    <input name="username" autocomplete="username" value="admin" required>
+    <label>Password</label>
+    <input name="password" type="password" autocomplete="current-password" required>
+    <p class="error" id="login-error"></p>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" type="submit">Enter</button>
+    </div>
+  </form>
+</div>
+<div id="app" class="hidden">
+  <div class="shell">
+    <aside>
+      <div class="brand"><div class="mark"><span></span></div><strong>DecisionNS</strong></div>
+      <nav id="nav">
+        <button data-page="overview" class="active">Overview</button>
+        <button data-page="devices">Devices</button>
+        <button data-page="rules">Rules</button>
+        <button data-page="lists">Lists</button>
+        <button data-page="services">Services</button>
+        <button data-page="log">Query log</button>
+        <button data-page="settings">Settings</button>
+      </nav>
+      <div class="spacer"></div>
+      <button class="btn secondary logout" id="logout" type="button">Sign out</button>
+    </aside>
+    <main id="view"></main>
+  </div>
+</div>
+<script>
+const view = document.querySelector("#view");
+const loginEl = document.querySelector("#login");
+const appEl = document.querySelector("#app");
+let page = "overview";
+let range = "24h";
+let presets = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    method: opts.method || "GET",
+    headers: { "content-type": "application/json" },
+    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { showLogin(); throw new Error("login required"); }
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function showLogin() {
+  appEl.classList.add("hidden");
+  loginEl.classList.remove("hidden");
+}
+function showApp() {
+  loginEl.classList.add("hidden");
+  appEl.classList.remove("hidden");
+}
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+function when(ts) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleString();
+}
+function pill(action) {
+  return `<span class="pill ${esc(action)}">${esc(action)}</span>`;
+}
+
+document.querySelector("#login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const err = document.querySelector("#login-error");
+  err.textContent = "";
+  try {
+    await api("/api/login", { method: "POST", body: { username: fd.get("username"), password: fd.get("password") } });
+    showApp();
+    render();
+  } catch (ex) { err.textContent = ex.message; }
+});
+document.querySelector("#logout").addEventListener("click", async () => {
+  await api("/api/logout", { method: "POST", body: {} }).catch(() => {});
+  showLogin();
+});
+document.querySelector("#nav").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  page = btn.dataset.page;
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b === btn));
+  render();
+});
+
+async function boot() {
+  try {
+    await api("/api/session");
+    showApp();
+    render();
+  } catch { showLogin(); }
+}
+
+async function render() {
+  view.innerHTML = `<p class="muted">Loading…</p>`;
+  try {
+    if (page === "overview") await pageOverview();
+    else if (page === "devices") await pageDevices();
+    else if (page === "rules") await pageRules();
+    else if (page === "lists") await pageLists();
+    else if (page === "services") await pageServices();
+    else if (page === "log") await pageLog();
+    else if (page === "settings") await pageSettings();
+  } catch (ex) {
+    if (ex.message !== "login required") view.innerHTML = `<p class="error">${esc(ex.message)}</p>`;
+  }
+}
+
+async function pageOverview() {
+  const [status, overview] = await Promise.all([
+    api("/api/status"),
+    api("/api/overview?range=" + range),
+  ]);
+  const max = Math.max(1, ...overview.series.map(p => p.queries));
+  const bars = overview.series.map(p => {
+    const h = Math.max(2, Math.round(p.queries / max * 88));
+    const bh = p.queries ? Math.round(p.blocked / p.queries * h) : 0;
+    return `<i style="height:${h}px" title="${p.queries} queries, ${p.blocked} blocked"><em style="height:${bh}px"></em></i>`;
+  }).join("");
+  const warnings = (status.warnings || []).map(w => `<div class="warn">${esc(w)}</div>`).join("");
+  view.innerHTML = `
+    <div class="page-head">
+      <div><h2>Overview</h2><p>DNS on ${esc((status.dns_listen || []).join(", ") || "not bound")} · admin ${esc(status.admin_listen)}</p></div>
+      <div class="row">
+        ${["24h","7d","30d"].map(r => `<button class="btn small ${r===range?" ":"secondary"}" data-range="${r}">${r}</button>`).join("")}
+      </div>
+    </div>
+    ${warnings}
+    ${status.services_ready ? "" : `<div class="warn">No decision service is enabled. Child safety will not call a model until you add a Jev key or point Clef at a SystemOne endpoint.</div>`}
+    <div class="grid stats">
+      <div class="card stat"><b>${overview.totals.queries}</b><span>queries</span></div>
+      <div class="card stat"><b>${overview.totals.allowed}</b><span>allowed</span></div>
+      <div class="card stat"><b>${overview.totals.blocked}</b><span>blocked</span></div>
+      <div class="card stat"><b>${overview.totals.errors}</b><span>errors</span></div>
+    </div>
+    <div class="grid split" style="margin-top:12px">
+      <div class="card panel">
+        <h3>Volume</h3>
+        <div class="bars">${bars || `<span class="muted">No queries in this window yet.</span>`}</div>
+        <p class="muted">Brass bars are queries. Coral is the blocked share.</p>
+      </div>
+      <div class="card panel">
+        <h3>Try a name</h3>
+        <form id="sim">
+          <label>Domain</label>
+          <input name="domain" placeholder="example.com" required>
+          <label>Profile</label>
+          <select name="profile"><option>child</option><option>standard</option><option>unrestricted</option></select>
+          <div class="row" style="margin-top:12px"><button class="btn small" type="submit">Simulate</button></div>
+          <pre id="sim-out" class="muted" style="white-space:pre-wrap"></pre>
+        </form>
+      </div>
+    </div>
+    <div class="grid split" style="margin-top:12px">
+      <div class="card panel">
+        <h3>Devices</h3>
+        ${table(["device","profile","queries","blocked"], overview.devices.map(d => [esc(d.name)+" · "+esc(d.ip), pill(d.profile), d.queries, d.blocked]))}
+      </div>
+      <div class="card panel">
+        <h3>Top blocked</h3>
+        ${table(["name","count"], overview.top_blocked.map(d => [esc(d.qname), d.count]))}
+        <h3 style="margin-top:18px">Recent blocks</h3>
+        ${table(["when","name","why"], overview.recent_blocks.map(q => [esc(when(q.ts)), esc(q.qname), esc(q.reason)]))}
+      </div>
+    </div>`;
+  view.querySelectorAll("[data-range]").forEach(b => b.onclick = () => { range = b.dataset.range; render(); });
+  view.querySelector("#sim").onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const out = view.querySelector("#sim-out");
+    out.textContent = "Asking…";
+    try {
+      const data = await api("/api/simulate", { method: "POST", body: { domain: fd.get("domain"), profile: fd.get("profile") } });
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (ex) { out.textContent = ex.message; }
+  };
+}
+
+function table(heads, rows) {
+  if (!rows.length) return `<p class="muted">Nothing here yet.</p>`;
+  return `<table><thead><tr>${heads.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>
+    ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}
+  </tbody></table>`;
+}
+
+async function pageDevices() {
+  const data = await api("/api/devices");
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Devices</h2><p>A device appears the first time it queries this server. New devices start as standard. Mark a child device before the child-safety rule applies.</p></div></div>
+    <div class="card panel">${data.devices.length ? data.devices.map(deviceCard).join("") : `<p class="muted">No devices yet. Point a client at this DNS server and look something up.</p>`}</div>`;
+  view.querySelectorAll("form.dev").forEach(form => {
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      await api("/api/devices/" + form.dataset.id, { method: "PATCH", body: {
+        name: fd.get("name"), profile: fd.get("profile"), notes: fd.get("notes"),
+      }});
+      render();
+    };
+    form.querySelector(".del").onclick = async () => {
+      if (!confirm("Forget this device?")) return;
+      await api("/api/devices/" + form.dataset.id, { method: "DELETE" });
+      render();
+    };
+  });
+}
+function deviceCard(d) {
+  return `<form class="dev" data-id="${d.id}" style="padding:8px 0;border-bottom:1px solid var(--line)">
+    <div class="row">
+      <strong style="min-width:140px">${esc(d.ip)}</strong>
+      <input name="name" value="${esc(d.name)}" style="max-width:220px">
+      <select name="profile">${["unrestricted","standard","child"].map(p => `<option ${p===d.profile?"selected":""}>${p}</option>`).join("")}</select>
+      <button class="btn small" type="submit">Save</button>
+      <button class="btn small danger del" type="button">Forget</button>
+    </div>
+    <label>Notes</label>
+    <input name="notes" value="${esc(d.notes)}">
+    <p class="muted">Last seen ${esc(when(d.last_seen))}</p>
+  </form>`;
+}
+
+async function pageRules() {
+  if (!presets) presets = await api("/api/presets");
+  const [rules, services] = await Promise.all([api("/api/rules"), api("/api/services")]);
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Rules</h2><p>Lower priority number wins. Allowlist and blocklist run before rules. A decide rule calls the selected SystemOne service.</p></div>
+    <button class="btn" id="new-rule" type="button">New rule</button></div>
+    <div id="editor" class="hidden card panel" style="margin-bottom:12px"></div>
+    <div class="card panel" id="rule-list"></div>`;
+  const list = view.querySelector("#rule-list");
+  list.innerHTML = rules.rules.map(r => `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0">
+    <div><strong>${esc(r.name)}</strong> ${r.enabled ? "" : `<span class="pill">disabled</span>`}
+      <div class="muted">${esc(r.action)} · ${esc(r.profile)} · ${esc(r.domain_pattern)} · priority ${r.priority}</div></div>
+    <div class="row"><button class="btn small secondary" data-edit="${r.id}">Edit</button>
+    <button class="btn small danger" data-del="${r.id}">Delete</button></div>
+  </div>`).join("") || `<p class="muted">No rules.</p>`;
+  const open = (rule) => {
+    view.querySelector("#editor").classList.remove("hidden");
+    view.querySelector("#editor").innerHTML = ruleForm(rule, services.services);
+    bindRuleForm();
+  };
+  view.querySelector("#new-rule").onclick = () => open(blankRule(services.services[0]));
+  list.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(rules.rules.find(r => r.id == b.dataset.edit)));
+  list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!confirm("Delete this rule?")) return;
+    await api("/api/rules/" + b.dataset.del, { method: "DELETE" });
+    render();
+  });
+}
+function blankRule(service) {
+  const preset = presets["child-safety"];
+  return {
+    name: "", enabled: true, priority: 100, profile: "child", device_ip: "", domain_pattern: "*",
+    action: "decide", service_id: service ? service.id : null,
+    questions: preset.questions, noul_question: preset.noul_question, noul_threshold: preset.noul_threshold,
+    score_question: "", score_threshold: 2, block_choices: preset.block_choices, min_confidence: preset.min_confidence,
+    on_uncertain: "allow", on_error: "allow", hour_start: null, hour_end: null, days_mask: 0, comment: "",
+  };
+}
+function ruleForm(r, services) {
+  const opts = services.map(s => `<option value="${s.id}" ${s.id===r.service_id?"selected":""}>${esc(s.name)}</option>`).join("");
+  return `<h3>${r.id ? "Edit rule" : "New rule"}</h3>
+    <form id="rule-form">
+      <input type="hidden" name="id" value="${r.id || ""}">
+      <div class="row">
+        <div style="flex:1"><label>Name</label><input name="name" value="${esc(r.name)}" required></div>
+        <div><label>Priority</label><input name="priority" type="number" value="${r.priority}" style="width:90px"></div>
+      </div>
+      <div class="row">
+        <div><label>Profile</label><select name="profile">${["any","unrestricted","standard","child"].map(p => `<option ${p===r.profile?"selected":""}>${p}</option>`).join("")}</select></div>
+        <div><label>Action</label><select name="action">${["allow","block","decide"].map(p => `<option ${p===r.action?"selected":""}>${p}</option>`).join("")}</select></div>
+        <div style="flex:1"><label>Domain pattern</label><input name="domain_pattern" value="${esc(r.domain_pattern)}"></div>
+      </div>
+      <label>Device IP (optional)</label><input name="device_ip" value="${esc(r.device_ip)}" placeholder="blank matches every device">
+      <label>Service</label><select name="service_id"><option value="">none</option>${opts}</select>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="btn small secondary" data-preset="child-safety">Child-safety questions</button>
+        <button type="button" class="btn small secondary" data-preset="malware">Malware questions</button>
+      </div>
+      <label>Questions JSON</label>
+      <textarea name="questions">${esc(JSON.stringify(r.questions, null, 2))}</textarea>
+      <div class="row">
+        <div style="flex:1"><label>Noul question</label><input name="noul_question" value="${esc(r.noul_question)}"></div>
+        <div><label>Noul threshold</label><input name="noul_threshold" type="number" step="0.05" value="${r.noul_threshold}" style="width:100px"></div>
+        <div><label>Min confidence</label><input name="min_confidence" type="number" step="0.05" value="${r.min_confidence}" style="width:100px"></div>
+      </div>
+      <label>Block if choice is</label>
+      <textarea name="block_choices" style="min-height:70px">${esc(JSON.stringify(r.block_choices, null, 2))}</textarea>
+      <div class="row">
+        <div><label>If uncertain</label><select name="on_uncertain">${["allow","block"].map(p => `<option ${p===r.on_uncertain?"selected":""}>${p}</option>`).join("")}</select></div>
+        <div><label>If the model errors</label><select name="on_error">${["allow","block"].map(p => `<option ${p===r.on_error?"selected":""}>${p}</option>`).join("")}</select></div>
+        <div><label>Hour start</label><input name="hour_start" type="number" value="${r.hour_start ?? ""}" style="width:80px"></div>
+        <div><label>Hour end</label><input name="hour_end" type="number" value="${r.hour_end ?? ""}" style="width:80px"></div>
+      </div>
+      <label>Days (empty = all)</label>
+      <div class="row" id="days">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d,i) => `<label class="check"><input type="checkbox" value="${i}" ${(r.days_mask & (1<<i)) ? "checked" : ""}> ${d}</label>`).join("")}</div>
+      <label class="check" style="margin-top:10px"><input type="checkbox" name="enabled" ${r.enabled?"checked":""}> Enabled</label>
+      <label>Comment</label><input name="comment" value="${esc(r.comment)}">
+      <p class="error" id="rule-error"></p>
+      <div class="row" style="margin-top:12px"><button class="btn" type="submit">Save rule</button></div>
+    </form>`;
+}
+function field(form, name) {
+  return form.elements.namedItem(name);
+}
+function bindRuleForm() {
+  const form = view.querySelector("#rule-form");
+  form.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => {
+    const p = presets[b.dataset.preset];
+    field(form, "questions").value = JSON.stringify(p.questions, null, 2);
+    field(form, "noul_question").value = p.noul_question;
+    field(form, "noul_threshold").value = p.noul_threshold;
+    field(form, "min_confidence").value = p.min_confidence;
+    field(form, "block_choices").value = JSON.stringify(p.block_choices, null, 2);
+  });
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const err = form.querySelector("#rule-error");
+    err.textContent = "";
+    try {
+      let days = 0;
+      form.querySelectorAll("#days input:checked").forEach(c => { days |= 1 << Number(c.value); });
+      const hourStart = field(form, "hour_start").value;
+      const hourEnd = field(form, "hour_end").value;
+      const service = field(form, "service_id").value;
+      const body = {
+        name: field(form, "name").value,
+        enabled: field(form, "enabled").checked,
+        priority: Number(field(form, "priority").value),
+        profile: field(form, "profile").value,
+        device_ip: field(form, "device_ip").value.trim(),
+        domain_pattern: field(form, "domain_pattern").value,
+        action: field(form, "action").value,
+        service_id: service ? Number(service) : null,
+        questions: JSON.parse(field(form, "questions").value || "{}"),
+        noul_question: field(form, "noul_question").value,
+        noul_threshold: Number(field(form, "noul_threshold").value),
+        score_question: "",
+        score_threshold: 2,
+        block_choices: JSON.parse(field(form, "block_choices").value || "{}"),
+        min_confidence: Number(field(form, "min_confidence").value),
+        on_uncertain: field(form, "on_uncertain").value,
+        on_error: field(form, "on_error").value,
+        hour_start: hourStart === "" ? null : Number(hourStart),
+        hour_end: hourEnd === "" ? null : Number(hourEnd),
+        days_mask: days,
+        comment: field(form, "comment").value,
+      };
+      const id = field(form, "id").value;
+      await api(id ? "/api/rules/" + id : "/api/rules", { method: id ? "PATCH" : "POST", body });
+      render();
+    } catch (ex) { err.textContent = ex.message; }
+  };
+}
+
+async function pageLists() {
+  const data = await api("/api/lists");
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Lists</h2><p>Allow wins over block. <code>example.com</code> includes subdomains. <code>=example.com</code> is exact. <code>*.example.com</code> is subdomains only. <code>*word*</code> is a glob.</p></div></div>
+    <div class="grid split">
+      <div class="card panel">
+        <h3>Add</h3>
+        <form id="add-list">
+          <label>Kind</label><select name="kind"><option>block</option><option>allow</option></select>
+          <label>Pattern</label><input name="pattern" required placeholder="ads.example.com">
+          <label>Comment</label><input name="comment">
+          <div class="row" style="margin-top:12px"><button class="btn small" type="submit">Add</button></div>
+        </form>
+        <h3 style="margin-top:22px">Import hosts or domain list</h3>
+        <form id="import-list">
+          <select name="kind"><option>block</option><option>allow</option></select>
+          <label>Text</label><textarea name="text" placeholder="0.0.0.0 ads.example.com"></textarea>
+          <div class="row" style="margin-top:12px">
+            <button class="btn small" type="submit">Import</button>
+            <button class="btn small secondary" id="doh" type="button">Block common DoH bypasses</button>
+          </div>
+          <p class="muted" id="import-note"></p>
+        </form>
+      </div>
+      <div class="card panel" id="list-table"></div>
+    </div>`;
+  view.querySelector("#list-table").innerHTML = table(
+    ["kind","pattern","comment",""],
+    data.lists.map(d => [pill(d.kind), esc(d.pattern), esc(d.comment), `<button class="btn small danger" data-del="${d.id}">Remove</button>`])
+  );
+  view.querySelector("#add-list").onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await api("/api/lists", { method: "POST", body: { kind: fd.get("kind"), pattern: fd.get("pattern"), comment: fd.get("comment") } });
+    render();
+  };
+  view.querySelector("#import-list").onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = await api("/api/lists/import", { method: "POST", body: { kind: fd.get("kind"), text: fd.get("text") } });
+    view.querySelector("#import-note").textContent = `Added ${data.added}`;
+    render();
+  };
+  view.querySelector("#doh").onclick = async () => {
+    const data = await api("/api/lists/presets/doh-bypass", { method: "POST", body: {} });
+    alert(data.note + ` Added ${data.added}.`);
+    render();
+  };
+  view.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    await api("/api/lists/" + b.dataset.del, { method: "DELETE" });
+    render();
+  });
+}
+
+async function pageServices() {
+  const data = await api("/api/services");
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Decision services</h2><p>Jev and Clef both speak <code>POST /v1/systemone</code>. Jev is hosted. Clef is the self-hosted model; point the base URL at whatever serves that API.</p></div>
+    <button class="btn" id="new-svc" type="button">Add service</button></div>
+    <div id="svc-editor" class="hidden card panel" style="margin-bottom:12px"></div>
+    <div id="svc-list"></div>`;
+  view.querySelector("#svc-list").innerHTML = data.services.map(s => `<div class="card panel" style="margin-bottom:10px">
+    <div class="row" style="justify-content:space-between">
+      <div><strong>${esc(s.name)}</strong> <span class="pill">${esc(s.kind)}</span> ${s.enabled ? `<span class="pill allow">enabled</span>` : `<span class="pill">disabled</span>`}
+        <div class="muted">${esc(s.base_url)} · model ${esc(s.model)} · ${s.has_api_key ? esc(s.key_hint) : "no key"}</div></div>
+      <div class="row">
+        <button class="btn small secondary" data-edit="${s.id}">Edit</button>
+        <button class="btn small secondary" data-test="${s.id}">Test</button>
+        <button class="btn small danger" data-del="${s.id}">Delete</button>
+      </div>
+    </div>
+    <pre class="muted" id="test-${s.id}" style="white-space:pre-wrap"></pre>
+  </div>`).join("");
+  const open = (s) => {
+    const box = view.querySelector("#svc-editor");
+    box.classList.remove("hidden");
+    box.innerHTML = `<h3>${s.id ? "Edit service" : "New service"}</h3>
+      <form id="svc-form">
+        <input type="hidden" name="id" value="${s.id || ""}">
+        <label>Name</label><input name="name" value="${esc(s.name)}" required>
+        <div class="row">
+          <div><label>Kind</label><select name="kind">${["jev","clef","custom"].map(k => `<option ${k===s.kind?"selected":""}>${k}</option>`).join("")}</select></div>
+          <div style="flex:1"><label>Model</label><input name="model" value="${esc(s.model)}" required></div>
+          <div><label>Timeout ms</label><input name="timeout_ms" type="number" value="${s.timeout_ms || 1500}" style="width:110px"></div>
+        </div>
+        <label>Base URL</label><input name="base_url" value="${esc(s.base_url)}" placeholder="https://api.typesafe.ai">
+        <label>API key ${s.id ? "(leave blank to keep the current key)" : ""}</label>
+        <input name="api_key" type="password" autocomplete="off" placeholder="${s.has_api_key ? esc(s.key_hint) : ""}">
+        <label class="check"><input type="checkbox" name="enabled" ${s.enabled?"checked":""}> Enabled</label>
+        <p class="error" id="svc-error"></p>
+        <div class="row" style="margin-top:12px"><button class="btn" type="submit">Save</button></div>
+      </form>`;
+    box.querySelector("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const err = form.querySelector("#svc-error");
+      err.textContent = "";
+      const id = field(form, "id").value;
+      const body = {
+        name: field(form, "name").value,
+        kind: field(form, "kind").value,
+        base_url: field(form, "base_url").value,
+        model: field(form, "model").value,
+        timeout_ms: Number(field(form, "timeout_ms").value),
+        enabled: field(form, "enabled").checked,
+      };
+      const key = field(form, "api_key").value;
+      if (!id || key) body.api_key = key;
+      try {
+        await api(id ? "/api/services/" + id : "/api/services", { method: id ? "PATCH" : "POST", body });
+        render();
+      } catch (ex) { err.textContent = ex.message; }
+    };
+  };
+  view.querySelector("#new-svc").onclick = () => open({ name: "", kind: "custom", base_url: "http://127.0.0.1:8000", model: "clef", timeout_ms: 2000, enabled: false, has_api_key: false });
+  view.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(data.services.find(s => s.id == b.dataset.edit)));
+  view.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!confirm("Delete this service?")) return;
+    try { await api("/api/services/" + b.dataset.del, { method: "DELETE" }); render(); }
+    catch (ex) { alert(ex.message); }
+  });
+  view.querySelectorAll("[data-test]").forEach(b => b.onclick = async () => {
+    const domain = prompt("Domain to evaluate", "example.com");
+    if (!domain) return;
+    const out = view.querySelector("#test-" + b.dataset.test);
+    out.textContent = "Calling the model…";
+    try {
+      const data = await api("/api/services/" + b.dataset.test + "/test", { method: "POST", body: { domain, profile: "child" } });
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (ex) { out.textContent = ex.message; }
+  });
+}
+
+async function pageLog() {
+  const q = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const data = await api("/api/queries?limit=100");
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Query log</h2><p>Recent lookups. Retention is set under Settings. Zero retention keeps hourly counts but drops names.</p></div></div>
+    <div class="card panel">${table(["when","device","type","name","action","reason","ms"], data.queries.map(q => [
+      esc(when(q.ts)), esc(q.device_ip), esc(q.qtype), esc(q.qname), pill(q.action), esc(q.reason), q.latency_ms
+    ]))}</div>`;
+  void q;
+}
+
+async function pageSettings() {
+  const s = await api("/api/settings");
+  view.innerHTML = `
+    <div class="page-head"><div><h2>Settings</h2><p>Upstream changes apply to the next lookup. Listen addresses come from the config file and need a restart.</p></div></div>
+    <div class="grid split">
+      <form class="card panel" id="settings">
+        <h3>Resolver</h3>
+        <label>Upstream servers, one per line</label>
+        <textarea name="upstream_servers">${esc(s.upstream_servers.join("\n"))}</textarea>
+        <p class="muted">HTTPS URLs are DNS-over-HTTPS. <code>ip:port</code> is classic DNS. Tried in order.</p>
+        <div class="row">
+          <div><label>Timeout ms</label><input name="upstream_timeout_ms" type="number" value="${s.upstream_timeout_ms}"></div>
+          <div><label>Block mode</label><select name="block_mode">${["sinkhole","nxdomain","refused"].map(m => `<option ${m===s.block_mode?"selected":""}>${m}</option>`).join("")}</select></div>
+          <div><label>Block TTL</label><input name="block_ttl" type="number" value="${s.block_ttl}"></div>
+        </div>
+        <div class="row">
+          <div><label>Decision cache seconds</label><input name="decision_cache_ttl_secs" type="number" value="${s.decision_cache_ttl_secs}"></div>
+          <div><label>Query log days</label><input name="query_log_retention_days" type="number" value="${s.query_log_retention_days}"></div>
+        </div>
+        <label class="check"><input type="checkbox" name="dns_allow_public" ${s.dns_allow_public?"checked":""}> Accept DNS from public addresses (open resolver — leave off)</label>
+        <p class="error" id="set-error"></p>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" type="submit">Save</button>
+          <button class="btn secondary" id="clear-cache" type="button">Clear decision cache</button>
+        </div>
+      </form>
+      <form class="card panel" id="password">
+        <h3>Password</h3>
+        <label>Current</label><input name="current" type="password" required>
+        <label>New</label><input name="next" type="password" minlength="8" required>
+        <p class="error" id="pw-error"></p>
+        <button class="btn" type="submit" style="margin-top:12px">Change password</button>
+      </form>
+    </div>`;
+  view.querySelector("#settings").onsubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const err = form.querySelector("#set-error");
+    err.textContent = "";
+    try {
+      await api("/api/settings", { method: "PUT", body: {
+        upstream_servers: form.upstream_servers.value.split("\n").map(s => s.trim()).filter(Boolean),
+        upstream_timeout_ms: Number(form.upstream_timeout_ms.value),
+        block_mode: form.block_mode.value,
+        block_ttl: Number(form.block_ttl.value),
+        decision_cache_ttl_secs: Number(form.decision_cache_ttl_secs.value),
+        query_log_retention_days: Number(form.query_log_retention_days.value),
+        dns_allow_public: form.dns_allow_public.checked,
+      }});
+      err.style.color = "var(--sage)";
+      err.textContent = "Saved.";
+    } catch (ex) { err.style.color = ""; err.textContent = ex.message; }
+  };
+  view.querySelector("#clear-cache").onclick = async () => {
+    await api("/api/cache/clear", { method: "POST", body: {} });
+    alert("Decision cache cleared.");
+  };
+  view.querySelector("#password").onsubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const err = form.querySelector("#pw-error");
+    err.textContent = "";
+    try {
+      await api("/api/account/password", { method: "POST", body: { current: form.current.value, next: form.next.value } });
+      err.style.color = "var(--sage)";
+      err.textContent = "Password changed. Sign in again.";
+      setTimeout(showLogin, 800);
+    } catch (ex) { err.textContent = ex.message; }
+  };
+}
+
+boot();
+</script>
+</body>
+</html>
